@@ -10,12 +10,11 @@ import streamlit as st
 from streamlit_extras.metric_cards import style_metric_cards
 
 st.set_page_config(
-    page_title="Email Verification",
+    page_title="Email verification",
     page_icon="✅",
     layout="centered",
 )
 
-# Function to label email validity
 def label_email(email):
     if not sc.is_valid_email(email):
         return "Invalid"
@@ -27,15 +26,35 @@ def label_email(email):
         return "Risky"
     return "Valid"
 
-# Function to process CSV file
+def label_emails(input_file):
+    file_extension = input_file.name.split('.')[-1].lower()
+
+    if file_extension == 'csv':
+        df = process_csv(input_file)
+    elif file_extension == 'xlsx':
+        df = process_xlsx(input_file)
+    elif file_extension == 'txt':
+        df = process_txt(input_file)
+    else:
+        st.warning("Unsupported file format. Please provide a CSV, XLSX, or TXT file.")
+
+
 def process_csv(input_file):
+    # Read the uploaded file as a DataFrame
     if input_file:
-        df = pd.read_csv(input_file, header=None)
+        if isinstance(input_file, str):  # For Streamlit sharing compatibility
+            df = pd.read_csv(input_file, header=None)
+        else:
+            df = pd.read_csv(input_file, header=None)
+        
+        # Create a list to store the results
         results = []
 
+        # Get the total number of emails
         total_emails = len(df)
         progress_bar = st.progress(0)
 
+        # Process each row in the input DataFrame
         for index, row in df.iterrows():
             email = row[0].strip()
             label = label_email(email)
@@ -52,11 +71,29 @@ def process_csv(input_file):
     else:
         return pd.DataFrame(columns=['Email', 'Label'])
 
-# Function to process TXT file
+def process_xlsx(input_file):
+    df = pd.read_excel(input_file, header=None)
+    results = []
+
+    for index, row in df.iterrows():
+        email = row[0].strip()
+        label = label_email(email)
+        results.append([email, label])
+
+    result_df = pd.DataFrame(results, columns=['Email', 'Label'])
+    result_df.index = range(1, len(result_df) + 1)  # Starting index from 1
+    
+    # Display the results in a table
+    st.dataframe(result_df)
+
+
 def process_txt(input_file):
     input_text = input_file.read().decode("utf-8").splitlines()
 
+    # Create a list to store the results
     results = []
+
+    # Get the total number of emails
     total_emails = len(input_text)
     progress_bar = st.progress(0)
 
@@ -72,22 +109,25 @@ def process_txt(input_file):
     # Create a DataFrame for the results
     result_df = pd.DataFrame(results, columns=['Email', 'Label'])
     result_df.index = range(1, len(result_df) + 1)  # Starting index from 1
-    return result_df
+
+    # Display the results in a table
+    st.dataframe(result_df)
 
 def main():
+
     with open('style.css') as f:
         st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
 
-    st.title("Email Verification Tool")
+    st.title("Email Verification Tool", help="This tool verifies the validity of an email address.")
     st.info("Results are accurate with 90% reliability.")
 
-    t1, t2 = st.columns(2)
+    t1, t2= st.tabs(["Single Email", "Bulk Email Processing"])
 
     with t1:
-        # Single email verification
-        st.header("Single Email Verification")
-        email = st.text_input("Enter an email address:")
+    # Single email verification
 
+        email = st.text_input("Enter an email address:")
+        
         if st.button("Verify"):
             with st.spinner('Verifying...'):
                 result = {}
@@ -140,11 +180,11 @@ def main():
                             col2.metric(label="MxRecord", value=result['MXRecord'])
                             col3.metric(label="Is Temporary", value=result['is Temporary'])
                             style_metric_cards()
-
+                            
                             # Show SMTP connection status as a warning
                             if not result['smtpConnection']:
                                 st.warning("SMTP connection not established.")
-
+                            
                             # Show domain details in an expander
                             with st.expander("See Domain Information"):
                                 try:
@@ -154,7 +194,7 @@ def main():
                                     st.write("Country:", dm_info.country)
                                 except:
                                     st.error("Domain information retrieval failed.")
-
+                            
                             # Show validity message
                             if is_valid:
                                 st.success(f"{email} is a Valid email")
@@ -168,26 +208,13 @@ def main():
         st.header("Bulk Email Processing")
         input_file = st.file_uploader("Upload a CSV, XLSX, or TXT file", type=["csv", "xlsx", "txt"])
         if input_file:
-            st.write("Number of emails uploaded: Calculating...")
-
-            # Process uploaded file
-            if input_file.type == 'text/plain':
-                input_text = input_file.read().decode("utf-8").splitlines()
-                st.write(f"Number of emails uploaded: {len(input_text)}")
-                result_df = process_txt(input_file)
-            else:
-                df = pd.read_csv(input_file) if input_file.name.endswith('.csv') else pd.read_excel(input_file)
-                st.write(f"Number of emails uploaded: {len(df)}")
-                result_df = process_csv(input_file)
-
-            # Display processing completion and results
             st.write("Processing...")
-            progress_bar = st.progress(0)
-            for percent_complete in range(100):
-                progress_bar.progress(percent_complete + 1)
-
-            st.success("Processing completed. Displaying results:")
-            st.dataframe(result_df)
+            if input_file.type == 'text/plain':
+                process_txt(input_file)
+            else:
+                df = process_csv(input_file)
+                st.success("Processing completed. Displaying results:")
+                st.dataframe(df)
 
 if __name__ == "__main__":
     main()
