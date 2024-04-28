@@ -26,32 +26,21 @@ def label_email(email):
         return "Risky"
     return "Valid"
 
-def label_emails(input_file):
-    file_extension = input_file.name.split('.')[-1].lower()
-
-    if file_extension == 'csv':
-        df = process_csv(input_file)
-    elif file_extension == 'xlsx':
-        df = process_xlsx(input_file)
-    elif file_extension == 'txt':
-        df = process_txt(input_file)
-    else:
-        st.warning("Unsupported file format. Please provide a CSV, XLSX, or TXT file.")
-
-
 def process_csv(input_file):
     # Read the uploaded file as a DataFrame
     if input_file:
-        if isinstance(input_file, str):  # For Streamlit sharing compatibility
-            df = pd.read_csv(input_file, header=None)
-        else:
-            df = pd.read_csv(input_file, header=None)
+        df = pd.read_csv(input_file, header=None)
         
         # Create a list to store the results
         results = []
 
         # Get the total number of emails
         total_emails = len(df)
+        
+        # Display the total number of emails to be processed
+        st.info(f"Total emails to process: {total_emails}")
+
+        # Initialize a progress bar
         progress_bar = st.progress(0)
 
         # Process each row in the input DataFrame
@@ -72,46 +61,72 @@ def process_csv(input_file):
         return pd.DataFrame(columns=['Email', 'Label'])
 
 def process_xlsx(input_file):
-    df = pd.read_excel(input_file, header=None)
-    results = []
+    # Read the uploaded file as a DataFrame
+    if input_file:
+        df = pd.read_excel(input_file, header=None)
+        
+        # Create a list to store the results
+        results = []
 
-    for index, row in df.iterrows():
-        email = row[0].strip()
-        label = label_email(email)
-        results.append([email, label])
+        # Get the total number of emails
+        total_emails = len(df)
+        
+        # Display the total number of emails to be processed
+        st.info(f"Total emails to process: {total_emails}")
 
-    result_df = pd.DataFrame(results, columns=['Email', 'Label'])
-    result_df.index = range(1, len(result_df) + 1)  # Starting index from 1
-    
-    # Display the results in a table
-    st.dataframe(result_df)
+        # Initialize a progress bar
+        progress_bar = st.progress(0)
 
+        # Process each row in the input DataFrame
+        for index, row in df.iterrows():
+            email = row[0].strip()
+            label = label_email(email)
+            results.append([email, label])
+
+            # Update progress bar
+            progress = (index + 1) / total_emails
+            progress_bar.progress(progress)
+
+        # Create a new DataFrame for results
+        result_df = pd.DataFrame(results, columns=['Email', 'Label'])
+        result_df.index = range(1, len(result_df) + 1)  # Starting index from 1
+        return result_df
+    else:
+        return pd.DataFrame(columns=['Email', 'Label'])
 
 def process_txt(input_file):
-    input_text = input_file.read().decode("utf-8").splitlines()
+    # Read the uploaded file as text
+    if input_file:
+        input_text = input_file.read().decode("utf-8").splitlines()
+        
+        # Create a list to store the results
+        results = []
 
-    # Create a list to store the results
-    results = []
+        # Get the total number of emails
+        total_emails = len(input_text)
+        
+        # Display the total number of emails to be processed
+        st.info(f"Total emails to process: {total_emails}")
 
-    # Get the total number of emails
-    total_emails = len(input_text)
-    progress_bar = st.progress(0)
+        # Initialize a progress bar
+        progress_bar = st.progress(0)
 
-    for index, line in enumerate(input_text):
-        email = line.strip()
-        label = label_email(email)
-        results.append([email, label])
+        # Process each email in the input text
+        for index, line in enumerate(input_text):
+            email = line.strip()
+            label = label_email(email)
+            results.append([email, label])
 
-        # Update progress bar
-        progress = (index + 1) / total_emails
-        progress_bar.progress(progress)
+            # Update progress bar
+            progress = (index + 1) / total_emails
+            progress_bar.progress(progress)
 
-    # Create a DataFrame for the results
-    result_df = pd.DataFrame(results, columns=['Email', 'Label'])
-    result_df.index = range(1, len(result_df) + 1)  # Starting index from 1
-
-    # Display the results in a table
-    st.dataframe(result_df)
+        # Create a new DataFrame for results
+        result_df = pd.DataFrame(results, columns=['Email', 'Label'])
+        result_df.index = range(1, len(result_df) + 1)  # Starting index from 1
+        return result_df
+    else:
+        return pd.DataFrame(columns=['Email', 'Label'])
 
 def main():
 
@@ -210,11 +225,14 @@ def main():
         if input_file:
             st.write("Processing...")
             if input_file.type == 'text/plain':
-                process_txt(input_file)
+                df = process_txt(input_file)
+            elif input_file.type == 'application/vnd.ms-excel':
+                df = process_xlsx(input_file)
             else:
                 df = process_csv(input_file)
-                st.success("Processing completed. Displaying results:")
-                st.dataframe(df)
+            
+            st.success("Processing completed. Displaying results:")
+            st.dataframe(df)
 
 if __name__ == "__main__":
     main()
