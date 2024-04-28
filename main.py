@@ -50,11 +50,19 @@ def process_csv(input_file):
         # Create a list to store the results
         results = []
 
+        # Get the total number of emails
+        total_emails = len(df)
+        progress_bar = st.progress(0)
+
         # Process each row in the input DataFrame
         for index, row in df.iterrows():
             email = row[0].strip()
             label = label_email(email)
             results.append([email, label])
+
+            # Update progress bar
+            progress = (index + 1) / total_emails
+            progress_bar.progress(progress)
 
         # Create a new DataFrame for results
         result_df = pd.DataFrame(results, columns=['Email', 'Label'])
@@ -85,10 +93,18 @@ def process_txt(input_file):
     # Create a list to store the results
     results = []
 
-    for line in input_text:
+    # Get the total number of emails
+    total_emails = len(input_text)
+    progress_bar = st.progress(0)
+
+    for index, line in enumerate(input_text):
         email = line.strip()
         label = label_email(email)
         results.append([email, label])
+
+        # Update progress bar
+        progress = (index + 1) / total_emails
+        progress_bar.progress(progress)
 
     # Create a DataFrame for the results
     result_df = pd.DataFrame(results, columns=['Email', 'Label'])
@@ -98,9 +114,10 @@ def process_txt(input_file):
     st.dataframe(result_df)
 
 def main():
+
     with open('style.css') as f:
         st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
-        
+
     st.title("Email Verification Tool", help="This tool verifies the validity of an email address.")
     st.info("The result may not be accurate. However, it has 90% accuracy.")
 
@@ -198,8 +215,6 @@ def main():
                 df = process_csv(input_file)
                 st.success("Processing completed. Displaying results:")
                 st.dataframe(df)
-
-
 
 if __name__ == "__main__":
     main()
