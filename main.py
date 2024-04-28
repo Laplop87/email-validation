@@ -119,7 +119,7 @@ def main():
         st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
 
     st.title("Email Verification Tool", help="This tool verifies the validity of an email address.")
-    st.info("The result may not be accurate. However, it has 90% accuracy.")
+    st.info("Results are accurate with 90% reliability.")
 
     t1, t2= st.tabs(["Single Email", "Bulk Email Processing"])
 
