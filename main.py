@@ -48,32 +48,30 @@ def process_csv(input_file):
         
         # Get the total number of emails
         total_emails = len(df)
-
-        # Display the number of emails being processed
-        st.write(f"Number of emails to verify: {total_emails}")
+        st.text(f"Number of emails to verify: {total_emails}")
 
         # Create a list to store the results
         results = []
 
-        # Display processing message
-        with st.spinner("Processing..."):
-            # Process each row in the input DataFrame
-            for index, row in df.iterrows():
-                email = row[0].strip()
-                label = label_email(email)
-                results.append([email, label])
+        # Get the total number of emails
+        progress_bar = st.progress(0)
 
-                # Update progress message
-                progress_message = f"Processing email {index + 1} of {total_emails}"
-                st.text(progress_message)
+        # Process each row in the input DataFrame
+        for index, row in df.iterrows():
+            email = row[0].strip()
+            label = label_email(email)
+            results.append([email, label])
+
+            # Update progress bar
+            progress = (index + 1) / total_emails
+            progress_bar.progress(progress)
 
         # Create a new DataFrame for results
         result_df = pd.DataFrame(results, columns=['Email', 'Label'])
         result_df.index = range(1, len(result_df) + 1)  # Starting index from 1
-
-        # Display the results in a table
-        st.success("Processing completed. Displaying results:")
-        st.dataframe(result_df)
+        return result_df
+    else:
+        return pd.DataFrame(columns=['Email', 'Label'])
 
 def process_xlsx(input_file):
     df = pd.read_excel(input_file, header=None)
@@ -98,28 +96,22 @@ def process_txt(input_file):
 
     # Get the total number of emails
     total_emails = len(input_text)
+    progress_bar = st.progress(0)
 
-    # Display the number of emails being processed
-    st.write(f"Number of emails to verify: {total_emails}")
+    for index, line in enumerate(input_text):
+        email = line.strip()
+        label = label_email(email)
+        results.append([email, label])
 
-    # Display processing message
-    with st.spinner("Processing..."):
-        # Process each email in the input text
-        for index, line in enumerate(input_text):
-            email = line.strip()
-            label = label_email(email)
-            results.append([email, label])
-
-            # Update progress message
-            progress_message = f"Processing email {index + 1} of {total_emails}"
-            st.text(progress_message)
+        # Update progress bar
+        progress = (index + 1) / total_emails
+        progress_bar.progress(progress)
 
     # Create a DataFrame for the results
     result_df = pd.DataFrame(results, columns=['Email', 'Label'])
     result_df.index = range(1, len(result_df) + 1)  # Starting index from 1
 
     # Display the results in a table
-    st.success("Processing completed. Displaying results:")
     st.dataframe(result_df)
 
 def main():
@@ -134,7 +126,6 @@ def main():
     with t1:
         # Single email verification
         email = st.text_input("Enter an email address:")
-        
         if st.button("Verify"):
             with st.spinner('Verifying...'):
                 result = {}
@@ -215,10 +206,13 @@ def main():
         st.header("Bulk Email Processing")
         input_file = st.file_uploader("Upload a CSV, XLSX, or TXT file", type=["csv", "xlsx", "txt"])
         if input_file:
+            st.write("Processing...")
             if input_file.type == 'text/plain':
                 process_txt(input_file)
             else:
-                process_csv(input_file)
+                df = process_csv(input_file)
+                st.success("Processing completed. Displaying results:")
+                st.dataframe(df)
 
 if __name__ == "__main__":
     main()
