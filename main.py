@@ -85,6 +85,7 @@ def main():
 
     with t1:
         # Single email verification
+        st.header("Single Email Verification")
         email = st.text_input("Enter an email address:")
 
         if st.button("Verify"):
@@ -167,23 +168,24 @@ def main():
         st.header("Bulk Email Processing")
         input_file = st.file_uploader("Upload a CSV, XLSX, or TXT file", type=["csv", "xlsx", "txt"])
         if input_file:
-            # Display number of emails uploaded
-            if input_file.type == 'text/plain':
-                input_text = input_file.read().decode("utf-8").splitlines()
-                st.write(f"Number of emails uploaded: {len(input_text)}")
-            else:
-                df = pd.read_csv(input_file) if input_file.name.endswith('.csv') else pd.read_excel(input_file)
-                st.write(f"Number of emails uploaded: {len(df)}")
-
-            st.write("Processing...")
+            st.write("Number of emails uploaded: Calculating...")
 
             # Process uploaded file
             if input_file.type == 'text/plain':
+                input_text = input_file.read().decode("utf-8").splitlines()
+                st.write(f"Number of emails uploaded: {len(input_text)}")
                 result_df = process_txt(input_file)
             else:
+                df = pd.read_csv(input_file) if input_file.name.endswith('.csv') else pd.read_excel(input_file)
+                st.write(f"Number of emails uploaded: {len(df)}")
                 result_df = process_csv(input_file)
 
             # Display processing completion and results
+            st.write("Processing...")
+            progress_bar = st.progress(0)
+            for percent_complete in range(100):
+                progress_bar.progress(percent_complete + 1)
+
             st.success("Processing completed. Displaying results:")
             st.dataframe(result_df)
 
