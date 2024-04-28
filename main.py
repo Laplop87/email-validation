@@ -38,6 +38,7 @@ def label_emails(input_file):
     else:
         st.warning("Unsupported file format. Please provide a CSV, XLSX, or TXT file.")
 
+
 def process_csv(input_file):
     # Read the uploaded file as a DataFrame
     if input_file:
@@ -46,14 +47,11 @@ def process_csv(input_file):
         else:
             df = pd.read_csv(input_file, header=None)
         
-        # Get the total number of emails
-        total_emails = len(df)
-        st.text(f"Number of emails to verify: {total_emails}")
-
         # Create a list to store the results
         results = []
 
         # Get the total number of emails
+        total_emails = len(df)
         progress_bar = st.progress(0)
 
         # Process each row in the input DataFrame
@@ -87,6 +85,7 @@ def process_xlsx(input_file):
     
     # Display the results in a table
     st.dataframe(result_df)
+
 
 def process_txt(input_file):
     input_text = input_file.read().decode("utf-8").splitlines()
@@ -122,10 +121,13 @@ def main():
     st.title("Email Verification Tool", help="This tool verifies the validity of an email address.")
     st.info("Results are accurate with 90% reliability.")
 
-    t1, t2 = st.columns([1, 3])
+    t1, t2= st.tabs(["Single Email", "Bulk Email Processing"])
+
     with t1:
-        # Single email verification
+    # Single email verification
+
         email = st.text_input("Enter an email address:")
+        
         if st.button("Verify"):
             with st.spinner('Verifying...'):
                 result = {}
