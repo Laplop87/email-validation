@@ -1,4 +1,3 @@
-from popular_domains import emailDomains
 import jellyfish
 from typing import List
 from concurrent.futures import ThreadPoolExecutor
@@ -39,16 +38,16 @@ def suggest_email_domain(domain: str, valid_domains: List[str]) -> List[str]:
     # Calculate distances using a faster string distance metric
     distances = {}
     with ThreadPoolExecutor(max_workers=np.minimum(16, len(valid_domains))) as executor:
-        for valid_domain, distance in zip(valid_domains, executor.map(lambda x: jellyfish.damerau_levenshtein_distance(domain, x), valid_domains)):
+        for valid_domain in valid_domains:
+            distance = jellyfish.damerau_levenshtein_distance(domain, valid_domain)
             if distance <= 2:
                 if distance in distances:
-                    if valid_domain not in distances[distance]:
-                        distances[distance].append(valid_domain)
+                    distances[distance].append(valid_domain)
                 else:
                     distances[distance] = [valid_domain]
 
-    # Choose the most similar domains based on alphabetical order
-    sorted_domains = np.array([])
+    # Choose the most similar domains based on alphabetical order and Trie search
+    sorted_domains = []
     if distances:
         min_distance = min(distances.keys())
         sorted_domains = sorted(distances[min_distance])
@@ -60,5 +59,3 @@ def suggest_email_domain(domain: str, valid_domains: List[str]) -> List[str]:
 
     # Combine and return the results
     return sorted_domains + phonetically_similar_domains
-
-
