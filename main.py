@@ -9,6 +9,8 @@ from popular_domains import emailDomains
 import streamlit as st
 from streamlit_extras.metric_cards import style_metric_cards
 
+TIMER = None
+
 st.set_page_config(
     page_title="Email verification",
     page_icon="✅",
